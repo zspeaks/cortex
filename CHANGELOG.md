@@ -3,6 +3,7 @@
 ## master / unreleased
 * [FEATURE] Compactor: Added `-compactor.block-files-concurrency` allowing to configure number of go routines for download/upload block files during compaction. #4784
 * [ENHANCEMENT] Querier/Ruler: Retry store-gateway in case of unexpected failure, instead of failing the query. #4532
+* [ENHANCEMENT] Logger: add possibility to implement `PrometheusLoggerFactory` to InitLogger #4786
 
 ## 1.13.0 in progress
 * [CHANGE] Changed default for `-ingester.min-ready-duration` from 1 minute to 15 seconds. #4539
@@ -33,8 +34,7 @@
 * [ENHANCEMENT] Add length and limit to labelNameTooLongError and labelValueTooLongError #4595
 * [ENHANCEMENT] Add jitter to rejoinInterval. #4747
 * [ENHANCEMENT] Compactor: uploading blocks no compaction marks to the global location and introduce a new metric #4729
-* [ENHANCEMENT] Logger: add possibility to implement `PrometheusLoggerFactory` to InitLogger #4786
-  * `cortex_bucket_blocks_marked_for_no_compaction_count`: Total number of blocks marked for no compaction in the bucket.
+* `cortex_bucket_blocks_marked_for_no_compaction_count`: Total number of blocks marked for no compaction in the bucket.
 * [ENHANCEMENT] Querier: Reduce the number of series that are kept in memory while streaming from ingesters. #4745
 * [BUGFIX] AlertManager: remove stale template files. #4495
 * [BUGFIX] Distributor: fix bug in query-exemplar where some results would get dropped. #4583

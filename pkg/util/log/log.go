@@ -39,7 +39,7 @@ func init() {
 // default logger for the server.
 func InitLogger(cfg *server.Config) {
 	factory := NewPrometheusLoggerFactory()
-	l, err := factory(cfg.LogLevel, cfg.LogFormat)
+	l, err := factory(cfg)
 	if err != nil {
 		panic(err)
 	}
@@ -82,13 +82,11 @@ func NewPrometheusLogger(l logging.Level, format logging.Format) (log.Logger, er
 	return logger, nil
 }
 
-type PrometheusLoggerFactory func(l logging.Level,
-	format logging.Format) (log.Logger, error)
+type PrometheusLoggerFactory func(cfg *server.Config) (log.Logger, error)
 
 func NewPrometheusLoggerFactory() PrometheusLoggerFactory {
-	return func(l logging.Level,
-		format logging.Format) (log.Logger, error) {
-		return NewPrometheusLogger(l, format)
+	return func(cfg *server.Config) (log.Logger, error) {
+		return NewPrometheusLogger(cfg.LogLevel, cfg.LogFormat)
 	}
 
 }
