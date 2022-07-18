@@ -1,6 +1,7 @@
 package log
 
 import (
+	"context"
 	"fmt"
 	"os"
 
@@ -38,8 +39,9 @@ func init() {
 // InitLogger initialises the global gokit logger (util_log.Logger) and overrides the
 // default logger for the server.
 func InitLogger(cfg *server.Config) {
-	factory := NewPrometheusLoggerFactory()
+	factory := OverridePrometheusLoggerFactory()
 	l, err := factory(cfg)
+	//l, err := NewPrometheusLogger(cfg.LogLevel, cfg.LogFormat)
 	if err != nil {
 		panic(err)
 	}
@@ -56,12 +58,36 @@ func InitLogger(cfg *server.Config) {
 
 // PrometheusLogger exposes Prometheus counters for each of go-kit's log levels.
 type PrometheusLogger struct {
-	logger log.Logger
+	logger      log.Logger
+	WithContext func(l log.Logger, ctx context.Context) log.Logger
+}
+type PrometheusLoggerFactory func(cfg *server.Config) (log.Logger, error)
+
+func NewPrometheusLoggerFactory() PrometheusLoggerFactory {
+	return func(cfg *server.Config) (log.Logger, error) {
+		return NewPrometheusLogger(cfg.LogLevel, cfg.LogFormat, nil)
+	}
+
+}
+func OverridePrometheusLoggerFactory() PrometheusLoggerFactory {
+	return func(cfg *server.Config) (kitlog.Logger, error) {
+		contextFunc := func(l log.Logger, ctx context.Context) log.Logger {
+			reqId, ok := RequestID(ctx)
+			if ok {
+				l = kitlog.With(l, "requestID", reqId)
+			}
+			return l
+		}
+		logger, err := NewPrometheusLogger(cfg.LogLevel, cfg.LogFormat, contextFunc)
+		return logger, err
+	}
 }
 
 // NewPrometheusLogger creates a new instance of PrometheusLogger which exposes
 // Prometheus counters for various log levels.
-func NewPrometheusLogger(l logging.Level, format logging.Format) (log.Logger, error) {
+func NewPrometheusLogger(l logging.Level, format logging.Format, contextFunc func(
+	l log.Logger, ctx context.Context) log.Logger) (log.Logger, error) {
+
 	logger := log.NewLogfmtLogger(log.NewSyncWriter(os.Stderr))
 	if format.String() == "json" {
 		logger = log.NewJSONLogger(log.NewSyncWriter(os.Stderr))
@@ -74,7 +100,8 @@ func NewPrometheusLogger(l logging.Level, format logging.Format) (log.Logger, er
 	}
 
 	logger = &PrometheusLogger{
-		logger: logger,
+		logger:      logger,
+		WithContext: contextFunc,
 	}
 
 	// return a Logger without caller information, shouldn't use directly
@@ -82,13 +109,10 @@ func NewPrometheusLogger(l logging.Level, format logging.Format) (log.Logger, er
 	return logger, nil
 }
 
-type PrometheusLoggerFactory func(cfg *server.Config) (log.Logger, error)
-
-func NewPrometheusLoggerFactory() PrometheusLoggerFactory {
-	return func(cfg *server.Config) (log.Logger, error) {
-		return NewPrometheusLogger(cfg.LogLevel, cfg.LogFormat)
-	}
-
+// RequestID obtains the value corresponding to the key "requestID" from the provided context
+func RequestID(ctx context.Context) (string, bool) {
+	id, worked := ctx.Value("requestID").(string)
+	return id, worked
 }
 
 // Log increments the appropriate Prometheus counter depending on the log level.
