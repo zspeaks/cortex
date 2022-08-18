@@ -3,6 +3,7 @@ package worker
 import (
 	"context"
 	"flag"
+	util_log "github.com/cortexproject/cortex/pkg/util/log"
 	"os"
 	"sync"
 	"time"
@@ -269,4 +270,28 @@ func (w *querierWorker) connect(ctx context.Context, address string) (*grpc.Clie
 		return nil, err
 	}
 	return conn, nil
+}
+
+func DecodeHTTPHeadersForLogging(ctx context.Context, request *httpgrpc.HTTPRequest) context.Context {
+	header_index := 0
+	contents_index := 0
+	headers := request.Headers
+	for index, header := range headers {
+		if header.Key == "Httpheaderforwardingnames" {
+			header_index = index
+		}
+		if header.Key == "Httpheaderforwardingcontents" {
+			contents_index = index
+		}
+	}
+	headerMap := make(map[string]string)
+	headersSlice := headers[header_index].Values
+	headerContentsSlice := headers[contents_index].Values
+	if len(headersSlice) == len(headerContentsSlice) {
+		for i, header := range headersSlice {
+			headerMap[header] = headerContentsSlice[i]
+		}
+		ctx = context.WithValue(ctx, util_log.HeaderMapContextKey, headerMap)
+	}
+	return ctx
 }

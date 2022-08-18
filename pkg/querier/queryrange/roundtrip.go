@@ -18,6 +18,7 @@ package queryrange
 import (
 	"context"
 	"flag"
+	util_log "github.com/cortexproject/cortex/pkg/util/log"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -149,7 +150,7 @@ func NewTripperware(
 
 	// Metric used to keep track of each middleware execution duration.
 	metrics := NewInstrumentMiddlewareMetrics(registerer)
-
+	// TODO this is where middleware is defined
 	queryRangeMiddleware := []Middleware{NewLimitsMiddleware(limits)}
 	if cfg.AlignQueriesWithStep {
 		queryRangeMiddleware = append(queryRangeMiddleware, InstrumentMiddleware("step_align", metrics), StepAlignMiddleware)
@@ -158,6 +159,7 @@ func NewTripperware(
 		staticIntervalFn := func(_ Request) time.Duration { return cfg.SplitQueriesByInterval }
 		queryRangeMiddleware = append(queryRangeMiddleware, InstrumentMiddleware("split_by_interval", metrics), SplitByIntervalMiddleware(staticIntervalFn, limits, codec, registerer))
 	}
+	queryRangeMiddleware = append(queryRangeMiddleware, )
 
 	var c cache.Cache
 	if cfg.CacheResults {
@@ -223,6 +225,7 @@ func NewRoundTripper(next http.RoundTripper, codec Codec, headers []string, midd
 		codec:   codec,
 		headers: headers,
 	}
+	// TODO define middleware to perform behavior currently hardcoded in Do (same file)
 	transport.handler = MergeMiddlewares(middlewares...).Wrap(&transport)
 	return transport
 }
@@ -253,10 +256,11 @@ func (q roundTripper) Do(ctx context.Context, r Request) (Response, error) {
 	if err != nil {
 		return nil, err
 	}
-
+	EncodeHTTPLoggingHeadersForRequest(ctx, request)
 	if err := user.InjectOrgIDIntoHTTPRequest(ctx, request); err != nil {
 		return nil, httpgrpc.Errorf(http.StatusBadRequest, err.Error())
 	}
+	level.Info(util_log.WithContext(ctx, util_log.Logger)).Log("do called with", "params")
 
 	response, err := q.next.RoundTrip(request)
 	if err != nil {
@@ -269,3 +273,22 @@ func (q roundTripper) Do(ctx context.Context, r Request) (Response, error) {
 
 	return q.codec.DecodeResponse(ctx, response, r)
 }
+
+func EncodeHTTPLoggingHeadersForRequest(ctx context.Context, request *http.Request) {
+	headerContentsMap, ok := ctx.Value(util_log.HeaderMapContextKey).(map[string]string)
+	if ok {
+		for header, contents := range headerContentsMap {
+			request.Header.Add("httpheaderforwardingnames", header)
+			request.Header.Add("httpheaderforwardingcontents", contents)
+		}
+	}
+}
+
+//func HTTPHeaderForwardingMiddleware() Middleware {
+//	return MiddlewareFunc(func(next Handler) Handler {
+//		return HandlerFunc(func(ctx context.Context, request Request) (Response, error) {
+//
+//		})
+//	})
+//}
+

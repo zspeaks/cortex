@@ -95,6 +95,7 @@ func (fp *frontendProcessor) process(c frontendv1pb.Frontend_ProcessClient) erro
 			// and cancel the query.  We don't actually handle queries in parallel
 			// here, as we're running in lock step with the server - each Recv is
 			// paired with a Send.
+			ctx = DecodeHTTPHeadersForLogging(ctx, request.HttpRequest)
 			go fp.runRequest(ctx, request.HttpRequest, request.StatsEnabled, func(response *httpgrpc.HTTPResponse, stats *stats.Stats) error {
 				return c.Send(&frontendv1pb.ClientToFrontend{
 					HttpResponse: response,
@@ -119,6 +120,7 @@ func (fp *frontendProcessor) runRequest(ctx context.Context, request *httpgrpc.H
 	if statsEnabled {
 		stats, ctx = querier_stats.ContextWithEmptyStats(ctx)
 	}
+	//util_log.WithContext(ctx, util_log.Logger).Log("Help", "help", "Test123", request.Headers[0].Key)
 
 	response, err := fp.handler.Handle(ctx, request)
 	if err != nil {

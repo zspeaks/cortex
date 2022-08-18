@@ -62,6 +62,7 @@ func newSchedulerProcessor(cfg Config, handler RequestHandler, log log.Logger, r
 
 // Handles incoming queries from query-scheduler.
 type schedulerProcessor struct {
+	// TODO make same changes here as in frontend_processor
 	log            log.Logger
 	handler        RequestHandler
 	grpcConfig     grpcclient.Config
@@ -129,7 +130,7 @@ func (sp *schedulerProcessor) querierLoop(c schedulerpb.SchedulerForQuerier_Quer
 		go func() {
 			// We need to inject user into context for sending response back.
 			ctx := user.InjectOrgID(ctx, request.UserID)
-
+			ctx = DecodeHTTPHeadersForLogging(ctx, request.HttpRequest)
 			tracer := opentracing.GlobalTracer()
 			// Ignore errors here. If we cannot get parent span, we just don't create new one.
 			parentSpanContext, _ := httpgrpcutil.GetParentSpanForRequest(tracer, request.HttpRequest)

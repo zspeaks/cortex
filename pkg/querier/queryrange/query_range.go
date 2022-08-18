@@ -260,7 +260,7 @@ func (prometheusCodec) DecodeRequest(_ context.Context, r *http.Request, forward
 
 func (prometheusCodec) EncodeRequest(ctx context.Context, r Request) (*http.Request, error) {
 	promReq, ok := r.(*PrometheusRequest)
-	level.Info(util_log.WithContext(ctx, util_log.Logger)).Log()
+	level.Info(util_log.WithContext(ctx, util_log.Logger)).Log("Encoded Request", "true")
 	if !ok {
 		return nil, httpgrpc.Errorf(http.StatusBadRequest, "invalid request format")
 	}
