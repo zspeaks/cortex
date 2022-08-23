@@ -62,7 +62,6 @@ func newSchedulerProcessor(cfg Config, handler RequestHandler, log log.Logger, r
 
 // Handles incoming queries from query-scheduler.
 type schedulerProcessor struct {
-	// TODO make same changes here as in frontend_processor
 	log            log.Logger
 	handler        RequestHandler
 	grpcConfig     grpcclient.Config

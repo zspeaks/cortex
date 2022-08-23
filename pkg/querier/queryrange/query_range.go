@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	util_log "github.com/cortexproject/cortex/pkg/util/log"
-	"github.com/go-kit/log/level"
 	"io/ioutil"
 	"math"
 	"net/http"
@@ -260,7 +258,6 @@ func (prometheusCodec) DecodeRequest(_ context.Context, r *http.Request, forward
 
 func (prometheusCodec) EncodeRequest(ctx context.Context, r Request) (*http.Request, error) {
 	promReq, ok := r.(*PrometheusRequest)
-	level.Info(util_log.WithContext(ctx, util_log.Logger)).Log("Encoded Request", "true")
 	if !ok {
 		return nil, httpgrpc.Errorf(http.StatusBadRequest, "invalid request format")
 	}

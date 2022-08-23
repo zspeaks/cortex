@@ -4,7 +4,6 @@ import (
 	"context"
 	util_log "github.com/cortexproject/cortex/pkg/util/log"
 	"github.com/gogo/status"
-	"github.com/weaveworks/common/httpgrpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
@@ -35,8 +34,13 @@ func HTTPHeaderPropagationServerInterceptor() grpc.UnaryServerInterceptor {
 // pullForwardedHeadersFromMetadata implements HTTPHeaderPropagationServerInterceptor by placing forwarded
 // headers into incoming context
 func pullForwardedHeadersFromMetadata(ctx context.Context) context.Context {
-	headerMap := make(map[string]string)
 	meta, worked := metadata.FromIncomingContext(ctx)
+	return forwardHeadersFromMetadataHelper(ctx, meta, worked)
+}
+
+// forwardHeadersFromMetadataHelper implements pullForwardedHeadersFromMetadata
+func forwardHeadersFromMetadataHelper(ctx context.Context, meta metadata.MD, worked bool) context.Context {
+	headerMap := make(map[string]string)
 	if worked {
 		headersSlice := meta["httpheaderforwardingnames"]
 		headerContentsSlice := meta["httpheaderforwardingcontents"]
@@ -78,40 +82,4 @@ func putForwardedHeadersIntoMetadata(ctx context.Context) context.Context {
 		}
 	}
 	return ctx
-}
-
-func HTTPGRPCServerInterceptor() grpc.UnaryServerInterceptor {
-	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo,
-		handler grpc.UnaryHandler) (resp interface{}, err error) {
-		request, worked := req.(*httpgrpc.HTTPRequest)
-		if worked {
-			headerIndex := 0
-			contentsIndex := 0
-			headers := request.Headers
-			for index, header := range headers {
-				if header.Key == "Httpheaderforwardingnames" {
-					headerIndex = index
-					util_log.Logger.Log("header index", index)
-				}
-				if header.Key == "Httpheaderforwardingcontents" {
-					contentsIndex = index
-					util_log.Logger.Log("contents index", index)
-				}
-				//for _, value := range header.Values {
-				//util_log.Logger.Log(header.Key, value)
-				//}
-			}
-			headerMap := make(map[string]string)
-			headersSlice := headers[headerIndex].Values
-			headerContentsSlice := headers[contentsIndex].Values
-			if len(headersSlice) == len(headerContentsSlice) {
-				for i, header := range headersSlice {
-					headerMap[header] = headerContentsSlice[i]
-				}
-				ctx = context.WithValue(ctx, util_log.HeaderMapContextKey, headerMap)
-			}
-		}
-		h, err := handler(ctx, req)
-		return h, err
-	}
 }

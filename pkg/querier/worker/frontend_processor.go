@@ -120,7 +120,6 @@ func (fp *frontendProcessor) runRequest(ctx context.Context, request *httpgrpc.H
 	if statsEnabled {
 		stats, ctx = querier_stats.ContextWithEmptyStats(ctx)
 	}
-	//util_log.WithContext(ctx, util_log.Logger).Log("Help", "help", "Test123", request.Headers[0].Key)
 
 	response, err := fp.handler.Handle(ctx, request)
 	if err != nil {

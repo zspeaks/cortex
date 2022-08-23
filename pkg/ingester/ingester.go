@@ -889,7 +889,6 @@ type extendedAppender interface {
 
 // Push adds metrics to a block
 func (i *Ingester) Push(ctx context.Context, req *cortexpb.WriteRequest) (*cortexpb.WriteResponse, error) {
-	logutil.WithContext(ctx, logutil.Logger).Log()
 	if err := i.checkRunning(); err != nil {
 		return nil, err
 	}
