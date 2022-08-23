@@ -39,6 +39,7 @@ func WithContext(ctx context.Context, l kitlog.Logger) kitlog.Logger {
 	if err == nil {
 		l = WithUserID(userID, l)
 	}
+
 	traceID, ok := tracing.ExtractSampledTraceID(ctx)
 	if !ok {
 		return l

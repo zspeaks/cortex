@@ -73,14 +73,15 @@ blocks_storage:
 #    container_name:
 #    endpoint_suffix:
 #    max_retries: # Number of retries for recoverable errors (defaults to 20)
-#  filesystem:
-#    dir: ./data/tsdb
+# filesystem:
+#   dir: ./data/tsdb
 
 compactor:
   data_dir: /tmp/cortex/compactor
   sharding_ring:
     kvstore:
       store: inmemory
+
 frontend_worker:
   match_max_concurrent: true
 
