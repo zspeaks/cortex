@@ -310,6 +310,7 @@ func (t *Cortex) initQuerier() (serv services.Service, err error) {
 		// the external HTTP server. This will allow the querier to consolidate query metrics both external
 		// and internal using the default instrumentation when running as a standalone service.
 		internalQuerierRouter = t.Server.HTTPServer.Handler
+		internalQuerierRouter = t.API.HTTPHeaderMiddleware.Wrap(internalQuerierRouter)
 	} else {
 		// Single binary mode requires a query frontend endpoint for the worker. If no frontend and scheduler endpoint
 		// is configured, Cortex will default to using frontend on localhost on it's own GRPC listening port.
@@ -328,6 +329,8 @@ func (t *Cortex) initQuerier() (serv services.Service, err error) {
 		// HTTP router with middleware to parse the tenant ID from the HTTP header and inject it into the
 		// request context.
 		internalQuerierRouter = t.API.AuthMiddleware.Wrap(internalQuerierRouter)
+
+		internalQuerierRouter = t.API.HTTPHeaderMiddleware.Wrap(internalQuerierRouter)
 	}
 
 	// If neither frontend address or scheduler address is configured, no worker is needed.
