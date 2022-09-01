@@ -82,6 +82,10 @@ api:
   # CLI flag: -http.prometheus-http-prefix
   [prometheus_http_prefix: <string> | default = "/prometheus"]
 
+  # Which HTTP Request headers to add to logs
+  # CLI flag: -api.http-request-headers-to-log
+  [http_request_headers_to_log: <list of string> | default = []]
+
 # The server_config configures the HTTP and gRPC server of the launched
 # service(s).
 [server: <server_config>]
@@ -250,6 +254,9 @@ query_scheduler:
     # Skip validating server certificate.
     # CLI flag: -query-scheduler.grpc-client-config.tls-insecure-skip-verify
     [tls_insecure_skip_verify: <boolean> | default = false]
+
+# The tracing_config configures backends cortex uses.
+[tracing: <tracing_config>]
 ```
 
 ### `server_config`
@@ -3968,4 +3975,35 @@ The `s3_sse_config` configures the S3 server-side encryption. The supported CLI 
 # string.
 # CLI flag: -<prefix>.s3.sse.kms-encryption-context
 [kms_encryption_context: <string> | default = ""]
+```
+
+### `tracing_config`
+
+The `tracing_config` configures backends cortex uses.
+
+```yaml
+# Tracing type. OTEL and JAEGER are currently supported. For jaeger
+# `JAEGER_AGENT_HOST` environment variable should also be set. See:
+# https://cortexmetrics.io/docs/guides/tracing .
+# CLI flag: -tracing.type
+[type: <string> | default = "jaeger"]
+
+otel:
+  # otl collector endpoint that the driver will use to send spans.
+  # CLI flag: -tracing.otel.oltp-endpoint
+  [oltp_endpoint: <string> | default = ""]
+
+  # Disables client transport security for the exporter.
+  # CLI flag: -tracing.otel.insecure
+  [insecure: <boolean> | default = false]
+
+  # enhance/modify traces/propagators for specific exporter. If empty, OTEL
+  # defaults will apply. Supported values are: `awsxray.`
+  # CLI flag: -tracing.otel.exporter-type
+  [exporter_type: <string> | default = ""]
+
+  # Fraction of traces to be sampled. Fractions >= 1 means sampling if off and
+  # everything is traced.
+  # CLI flag: -tracing.otel.sample-ration
+  [sample_ratio: <float> | default = 0.001]
 ```
